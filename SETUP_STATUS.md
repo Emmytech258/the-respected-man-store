@@ -15,11 +15,13 @@ Separate copy of the Revival Fire Forum store code (including the Bachs card-in-
 - 2026-11-19 (22:04 UTC): After the owner retried the build with `npm run check` / `npm run deploy`, the log (version 71a955a2) shows: private R2 verified, CONFIG_KEY and AUTHOR_INITIAL_PASSWORD secrets created, migrations 0001-0010 applied, "The database, private file storage and store encryption are ready", Worker deployed with custom domain therespectedman.online and the per-minute schedule. Still to confirm by looking at the live site: /books/ and /books/author/ load, portal login works.
 - Open issue: pushes to main did not start new Cloudflare builds (only the first build and a manual retry ran). Check Settings > Builds > Trigger events and the Git connection.
 
+- 2026-11-19: Owner asked for a black-and-gold look that works in light and dark mode. Done: light = ivory/black with dark-gold accents, dark = near-black with gold accents; logo clipped to a circle; placeholder cover recoloured; receipt email colours; logo.svg recoloured. Contrast checked by calculation (all text pairs at least 4.5:1, most above 8:1) and the store was viewed in a real browser (desktop and phone, light and dark) against a throwaway local database with made-up sample books that were deleted afterwards. npm run check, npm test (124) and npm run build pass. Not yet seen on the live site (needs a Cloudflare build). Owner author portal still uses the old green; not changed.
+
 ## Not done
 - Make the GitHub repository private (owner will do this later; check Cloudflare Workers Builds still has access afterwards).
 - Cloudflare Worker, D1 database, private R2 bucket, secrets and deployment: not created. Nothing deployed.
 - Bachs account/keys/webhook, Flutterwave (if wanted), Resend sender for this domain, new Pixel and token: owner to supply in the portal.
 - Books, prices, covers and PDFs: none; production stays empty until supplied.
-- Larger logo (the supplied one is 96x96) and a black-and-gold theme: not built.
+- Larger logo: the supplied one is 96x96 and looks acceptable at header size; a bigger original would be sharper on high-density screens.
 - Homepage wording is a draft awaiting approval.
 - Nothing proven live: no live payment, receipt or Meta event for this brand.
