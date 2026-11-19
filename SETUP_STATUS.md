@@ -12,6 +12,9 @@ Separate copy of the Revival Fire Forum store code (including the Bachs card-in-
 
 - 2026-11-19: Worker the-respected-man-store created from GitHub; custom domain attached. First build (f309c361) ran Cloudflare's default `npm run build` and `npx wrangler deploy`, not `npm run deploy`. Wrangler auto-created the D1 database and R2 bucket, but no migrations, CONFIG_KEY or initial password were set, so /books/ and /books/author/ return the generic store error (no tables yet). Build settings now read `npm run check` and `npm run deploy`; a new build was triggered to run the real setup. Not yet proven: setup output, private-bucket check, tables, working store page.
 
+- 2026-11-19 (22:04 UTC): After the owner retried the build with `npm run check` / `npm run deploy`, the log (version 71a955a2) shows: private R2 verified, CONFIG_KEY and AUTHOR_INITIAL_PASSWORD secrets created, migrations 0001-0010 applied, "The database, private file storage and store encryption are ready", Worker deployed with custom domain therespectedman.online and the per-minute schedule. Still to confirm by looking at the live site: /books/ and /books/author/ load, portal login works.
+- Open issue: pushes to main did not start new Cloudflare builds (only the first build and a manual retry ran). Check Settings > Builds > Trigger events and the Git connection.
+
 ## Not done
 - Make the GitHub repository private (owner will do this later; check Cloudflare Workers Builds still has access afterwards).
 - Cloudflare Worker, D1 database, private R2 bucket, secrets and deployment: not created. Nothing deployed.
