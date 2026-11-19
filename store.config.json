@@ -1,0 +1,14 @@
+{
+  "store_name": "The Respected Man",
+  "tagline": "Practical books for men who carry real responsibility.",
+  "homepage_title": "Become the man people respect.",
+  "homepage_intro": "Clear, practical books for men, written in plain language you can read on your phone. Choose your book, pay securely and download it as soon as your payment is confirmed.",
+  "catalog_intro": "Find the book that speaks to what you are facing.",
+  "support_email": "therespectedman1@gmail.com",
+  "domain": "therespectedman.online",
+  "worker_name": "the-respected-man-store",
+  "database_name": "the-respected-man-db",
+  "bucket_name": "the-respected-man-files",
+  "logo_url": "/books/assets/the-respected-man-logo.png",
+  "deployment_mode": "custom-domain"
+}
