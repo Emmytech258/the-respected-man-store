@@ -10,6 +10,8 @@ Separate copy of the Revival Fire Forum store code (including the Bachs card-in-
 - Owner confirmed the terms, privacy, refund and delivery pages stay the same as the other brand's, with this brand name.
 - npm run check, npm test (124 passing) and npm run build pass.
 
+- 2026-11-19: Worker the-respected-man-store created from GitHub; custom domain attached. First build (f309c361) ran Cloudflare's default `npm run build` and `npx wrangler deploy`, not `npm run deploy`. Wrangler auto-created the D1 database and R2 bucket, but no migrations, CONFIG_KEY or initial password were set, so /books/ and /books/author/ return the generic store error (no tables yet). Build settings now read `npm run check` and `npm run deploy`; a new build was triggered to run the real setup. Not yet proven: setup output, private-bucket check, tables, working store page.
+
 ## Not done
 - Make the GitHub repository private (owner will do this later; check Cloudflare Workers Builds still has access afterwards).
 - Cloudflare Worker, D1 database, private R2 bucket, secrets and deployment: not created. Nothing deployed.
