@@ -134,7 +134,7 @@ export async function mail(env,s,to,subject,html,idempotencyKey,replyTo=s.suppor
   const {response,data}=await upstream(env,'https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+await decrypt(env,s.resend_key),'Content-Type':'application/json','Idempotency-Key':idempotencyKey},body:JSON.stringify({from:(s.from_name||BRAND.store_name)+' <'+s.from_email+'>',to:[to],reply_to:replyTo,subject,html})});
   assert(response.ok&&data.id,502,'Our email service could not accept this message.');return data.id;
 }
-const shell=html=>'<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#1a1710;line-height:1.7"><h2 style="color:#16130d">'+escapeHtml(BRAND.store_name)+'</h2>'+html+'</div>';
+const shell=html=>'<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#172d27;line-height:1.7"><h2 style="color:#174c3c">'+escapeHtml(BRAND.store_name)+'</h2>'+html+'</div>';
 export async function receiptEmail(env,order,req,manual=false) {
   if(order.status!=='paid'||(!manual&&order.email_sent_at))return Boolean(order.email_sent_at);
   const claim=await env.DB.prepare("UPDATE orders SET mail_lock=? WHERE ref=? AND status='paid' AND mail_lock<?"+(manual?'':' AND email_sent_at IS NULL')).bind(now(),order.ref,now()-90).run();if(!claim.meta.changes)return false;

@@ -29,3 +29,4 @@ Separate copy of the Revival Fire Forum store code (including the Bachs card-in-
 - Larger logo: the supplied one is 96x96 and looks acceptable at header size; a bigger original would be sharper on high-density screens.
 - Homepage wording is a draft awaiting approval.
 - Nothing proven live: no live payment, receipt or Meta event for this brand.
+- 2026-11-20: Owner asked to go back to the original green look. Reverted store.css, store.js, src/payments.js, logo.svg and placeholder.svg to their state before the black-and-gold commit (642d9dc). Kept the round clipping of the owner's own logo image. npm run check, npm test (124) and npm run build pass. Not yet seen on the live site (needs a Cloudflare build). The black-and-gold theme is still in Git history (642d9dc) if wanted later.
