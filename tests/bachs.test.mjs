@@ -201,6 +201,19 @@ test('Live Bachs payments use the live API and add each purchased book once',asy
   await deliver(o,{id:'evt_live_once'});await deliver(o,{id:'evt_live_once'});assert.equal((await verify(o)).data.status,'paid');
   for(const b of books.slice(0,2)){const count=await db.prepare('SELECT count FROM book_purchase_counts WHERE book_id=?').bind(b.id).first();assert.equal(count.count,1);}
 });
+test('A live paid order sends one sale alert to the chosen address; test orders and a blank address send none',async()=>{
+  const alertTo='owner-alert@example.org',mine=list=>list.filter(m=>m.body.to[0]===alertTo);
+  assert.equal((await api('admin/settings',{method:'POST',auth:true,data:{sale_alert_email:'not an email'}})).response.status,400);
+  await configure({sale_alert_email:alertTo});assert.equal((await api('admin/settings',{auth:true})).data.sale_alert_email,alertTo);
+  const o=await order('XOF','BJ'),prior=messages.length;complete(o);
+  await deliver(o,{id:'evt_alert_once'});await deliver(o,{id:'evt_alert_once'});await deliver(o,{type:'collection.succeeded'});assert.equal((await verify(o)).data.status,'paid');
+  const alerts=mine(messages.slice(prior));assert.equal(alerts.length,1);assert.match(alerts[0].body.subject,/^New sale: /);assert.match(alerts[0].body.html,/XOF/);assert.ok(!alerts[0].body.html.includes(o.key));assert.ok(!alerts[0].body.html.includes('reader@example.com'));
+  assert.equal(messages.slice(prior).filter(m=>m.body.to[0]==='reader@example.com').length,1);
+  assert.ok((await db.prepare('SELECT alert_sent_at FROM orders WHERE ref=?').bind(o.row.ref).first()).alert_sent_at);
+  await configure({sale_alert_email:''});const quiet=await order('XOF','BJ'),before=messages.length;complete(quiet);await deliver(quiet,{id:'evt_alert_blank'});assert.equal((await verify(quiet)).data.status,'paid');assert.equal(mine(messages.slice(before)).length,0);
+  await configure({sale_alert_email:alertTo,mode:'test'});const t=await order(),beforeTest=messages.length;complete(t);await deliver(t);assert.equal((await verify(t)).data.status,'paid');assert.equal(mine(messages.slice(beforeTest)).length,0);
+  await configure({sale_alert_email:''});
+});
 test('Trusted Bachs targets, decimal comparisons and rotating webhook signatures reject ambiguous input',async()=>{
   assert.ok(bachsCheckoutTarget('https://checkout.bachs.io/c/token_123'));
   for(const u of ['http://checkout.bachs.io/c/token','https://checkout.bachs.io.evil.example/c/token','https://evil.example/c/token','https://a:b@checkout.bachs.io/c/token','https://checkout.bachs.io:8443/c/token','https://checkout.bachs.io/c/token?redirect=evil','https://checkout.bachs.io/other/token'])assert.equal(bachsCheckoutTarget(u),null,u);

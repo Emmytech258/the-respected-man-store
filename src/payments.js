@@ -135,6 +135,18 @@ export async function mail(env,s,to,subject,html,idempotencyKey,replyTo=s.suppor
   assert(response.ok&&data.id,502,'Our email service could not accept this message.');return data.id;
 }
 const shell=html=>'<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#172d27;line-height:1.7"><h2 style="color:#174c3c">'+escapeHtml(BRAND.store_name)+'</h2>'+html+'</div>';
+async function saleAlert(env,s,order) {
+  try{
+    const to=String(s.sale_alert_email||'').trim();
+    if(!to||order.mode!=='live'||order.status!=='paid'||order.alert_sent_at)return;
+    const claim=await env.DB.prepare("UPDATE orders SET alert_lock=? WHERE ref=? AND status='paid' AND mode='live' AND alert_sent_at IS NULL AND alert_lock<?").bind(now(),order.ref,now()-90).run();if(!claim.meta.changes)return;
+    const items=JSON.parse(order.items),total=new Intl.NumberFormat('en',{maximumFractionDigits:2}).format(Number(order.amount)||0)+' '+order.currency;
+    const when=new Date((order.paid_at||now())*1000).toLocaleString('en-GB',{timeZone:'Africa/Lagos',hour12:true});
+    const titles=items.map(i=>'<li>'+escapeHtml(i.title)+'</li>').join('');
+    await mail(env,s,to,'New sale: '+total,shell('<p><strong>You made a sale.</strong></p><p>Amount: '+escapeHtml(total)+'<br>Buyer: '+escapeHtml(order.name)+(order.country?' ('+escapeHtml(order.country)+')':'')+'<br>Paid with: '+escapeHtml(order.provider==='bachs'?'Bachs':'Flutterwave')+'<br>Time (Nigeria, WAT): '+escapeHtml(when)+'<br>Reference: '+escapeHtml(order.ref)+'</p><p>Books:</p><ul>'+titles+'</ul><p>Open your portal Sales page for the full details.</p>'),'alert/'+order.ref);
+    await env.DB.prepare('UPDATE orders SET alert_sent_at=?,alert_lock=0 WHERE ref=?').bind(now(),order.ref).run();
+  }catch{try{await env.DB.prepare('UPDATE orders SET alert_lock=0 WHERE ref=?').bind(order.ref).run();}catch{}}
+}
 export async function receiptEmail(env,order,req,manual=false) {
   if(order.status!=='paid'||(!manual&&order.email_sent_at))return Boolean(order.email_sent_at);
   const claim=await env.DB.prepare("UPDATE orders SET mail_lock=? WHERE ref=? AND status='paid' AND mail_lock<?"+(manual?'':' AND email_sent_at IS NULL')).bind(now(),order.ref,now()-90).run();if(!claim.meta.changes)return false;
@@ -146,7 +158,7 @@ export async function receiptEmail(env,order,req,manual=false) {
     const page=originFor(env,s,req)+'/books/download/?ref='+encodeURIComponent(order.ref)+'&k='+encodeURIComponent(key);
     const all=items.length>1?'<p><a href="'+escapeHtml(await downloadUrl(env,s,order,'all',req,expires))+'">Download all your books (ZIP)</a></p>':'';
     await mail(env,s,order.email,'Your books are ready',shell('<p>Hello '+escapeHtml(order.name)+',</p><p>Thank you for your purchase. Here are your books:</p><ul>'+links.join('')+'</ul>'+all+'<p>Direct links last 48 hours. <a href="'+escapeHtml(page)+'">Open your private download page</a> whenever you need fresh links or want to leave a review.</p><p>Reference: '+escapeHtml(order.ref)+'</p><p>For help, reply to this email.</p>'),'receipt/'+order.ref+(manual?'/'+now():''));
-    await env.DB.prepare('UPDATE orders SET email_sent_at=?,mail_lock=0,mail_error=NULL WHERE ref=?').bind(now(),order.ref).run();return true;
+    await env.DB.prepare('UPDATE orders SET email_sent_at=?,mail_lock=0,mail_error=NULL WHERE ref=?').bind(now(),order.ref).run();if(!manual)await saleAlert(env,s,order);return true;
   }catch(error){await env.DB.prepare('UPDATE orders SET mail_lock=0,mail_error=? WHERE ref=?').bind('Receipt email needs another attempt.',order.ref).run();return false;}
 }
 export async function verifyOrder(env,req,data) {
@@ -195,6 +207,8 @@ export async function scheduled(env) {
   for(const order of receipts)await receiptEmail(env,order);
   const {results:pending}=await env.DB.prepare("SELECT * FROM orders WHERE status IN ('pending','failed','underpaid','review','expired','cancelled') AND (checkout_url IS NOT NULL OR provider_session IS NOT NULL) AND created_at>? AND (last_check_at IS NULL OR last_check_at<? OR (status='pending' AND reminder_sent_at IS NULL AND created_at<? AND last_check_at<?)) ORDER BY COALESCE(last_check_at,0),created_at LIMIT 10").bind(now()-2592000,now()-600,now()-900,now()-60).all();
   for(let order of pending){try{order=await reconcile(env,order);if(order.status==='paid')await receiptEmail(env,order);else if(order.created_at<=now()-900&&order.created_at>now()-172800)await reminderEmail(env,order);}catch{}}
+  const alertSettings=await settings(env);
+  if(String(alertSettings.sale_alert_email||'').trim()){const {results:alerts}=await env.DB.prepare("SELECT * FROM orders WHERE status='paid' AND mode='live' AND alert_sent_at IS NULL AND paid_at>? LIMIT 10").bind(now()-86400).all();for(const order of alerts)await saleAlert(env,alertSettings,order);}
   await flushMeta(env);
   await env.DB.batch([env.DB.prepare('DELETE FROM sessions WHERE expires_at<?').bind(now()),env.DB.prepare('DELETE FROM limits WHERE expires_at<?').bind(now())]);
 }
